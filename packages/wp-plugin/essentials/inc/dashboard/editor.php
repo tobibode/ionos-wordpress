@@ -200,6 +200,16 @@ function _persist_dashboard(\WP_Post $post): void
   }
 });
 
+\add_action('wp_enqueue_scripts', function () {
+  if (\is_singular(POST_TYPE_SLUG)) {
+    \wp_enqueue_style(
+      handle: 'ionos-dashboard-styles',
+      src : \plugins_url('/inc/dashboard/data/exos.2.1.3.min.css', 'essentials/essentials.php'),
+      ver: '2.1.3',
+    );
+  }
+});
+
 // convert all enqueued style files into inline styles
 // to enable us to capture everything in one file
 \add_action('wp_print_styles', function () {

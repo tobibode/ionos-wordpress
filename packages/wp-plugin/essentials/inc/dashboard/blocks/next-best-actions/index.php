@@ -47,22 +47,19 @@ function render_callback()
           <h2 class="wp-block-heading">' . \esc_html($action->title, 'ionos-essentials') . '</h2>
           <p>' . \esc_html($action->description, 'ionos-essentials') . '</p>
           <div class="wp-block-buttons is-layout-flex wp-block-buttons-is-layout-flex">
-              <div class="wp-block-button">
-                  <a href="' . \esc_url(
+            <a href="' . \esc_url(
       $action->link
-    ) . '" class="wp-block-button__link wp-element-button" target="' . $target . '">' . \esc_html(
+    ) . '" class="button button--primary" target="' . $target . '">' . \esc_html(
       $action->title,
       'ionos-essentials'
     ) . '</a>
-              </div>
-              <div class="wp-block-button is-style-outline is-style-outline--1">
-                  <a data-nba-id="' . $action->id . '" class="wp-block-button__link wp-element-button dismiss-nba" target="_top">' . \esc_html(
+              <a data-nba-id="' . $action->id . '"class="ghost-button dismiss-nba" target="_top">' . \esc_html(
       'Dismiss',
       'ionos-essentials'
     ) . '</a>
-              </div>
-          </div>
-      </div>';
+         </div>
+      </div>
+      ';
   }
 
   if (empty($body)) {
