@@ -2,19 +2,8 @@
 
 namespace ionos\essentials\dashboard\blocks\banner;
 
-use const ionos\essentials\PLUGIN_DIR;
-
-\add_action('init', function () {
-  \register_block_type(
-    PLUGIN_DIR . '/build/dashboard/blocks/banner',
-    [
-      'render_callback' => __NAMESPACE__ . '\\render_callback',
-    ]
-  );
-});
-
-const MAIN_TEMPLATE   = '<div class="wp-block-buttons banner-buttons">%s</div>';
-const BUTTON_TEMPLATE = '<div class="wp-block-button button"><a href="%s" target="%s" class="wp-block-button__link has-text-align-center wp-element-button %s">%s</a></div>';
+const MAIN_TEMPLATE   = '<div class="">%s</div>';
+const BUTTON_TEMPLATE = '<div class=""><a href="%s" target="%s" class="%s">%s</a></div>';
 function render_callback(): string
 {
   $button_list = [];
@@ -40,32 +29,4 @@ function render_callback(): string
   ), $button_list));
 
   return \sprintf(MAIN_TEMPLATE, $button_html);
-}
-
-function get_ai_button(): array
-{
-  if ('extendable' !== \get_option('stylesheet') || ! \is_plugin_active('extendify/extendify.php')) {
-    return [];
-  }
-
-  $launchCompleted = \get_option('extendify_onboarding_completed', false);
-  if (false === $launchCompleted) {
-    return [
-      [
-        'link'           => \admin_url('admin.php?page=extendify-launch'),
-        'text'           => \__('Start AI Sitebuilder', 'ionos-essentials'),
-        'css-attributes' => 'startai',
-      ], ];
-  }
-
-  if (strtotime($launchCompleted) > time() - (3 * 24 * 60 * 60)) {
-    return [
-      [
-        'link'           => \admin_url('admin.php?page=extendify-launch'),
-        'text'           => \__('Retry AI', 'ionos-essentials'),
-        'css-attributes' => 'retryai',
-      ], ];
-  }
-
-  return [];
 }
