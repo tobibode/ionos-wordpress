@@ -101,7 +101,7 @@ for ASSET in $ASSETS; do
     echo "Error: $error_message"
   fi
   # upload latest to s3
-  S3_FILENAME=$(echo $TARGET_ASSET_FILENAME | sed -E 's/-latest-.+$/.latest.zip/')
+  S3_FILENAME=$(echo $TARGET_ASSET_FILENAME | sed -E 's/-latest-.+$/.test.zip/')
   echo "upload '$ASSET' to s3 as '$S3_FILENAME'"
   # ensure we have a AWS_ACCESS_KEY_ID
   if [[ -z "${AWS_ACCESS_KEY_ID}" ]] || [[ -z "${AWS_SECRET_ACCESS_KEY}" ]]; then
@@ -111,8 +111,8 @@ for ASSET in $ASSETS; do
       export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
       export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 
-      aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-      aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+      aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}"
+      aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
 
       aws --endpoint-url https://s3-de-central.profitbricks.com s3 cp /tmp/$TARGET_ASSET_FILENAME s3://web-hosting/ionos-group/$S3_FILENAME
 EOF
