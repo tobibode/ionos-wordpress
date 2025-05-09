@@ -107,14 +107,14 @@ for ASSET in $ASSETS; do
   if [[ -z "${AWS_ACCESS_KEY_ID}" ]] || [[ -z "${AWS_SECRET_ACCESS_KEY}" ]]; then
     ionos.wordpress.log_error "aws secrets are not complete. AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY is necessary"
   else
-    docker run -i --rm -v "$(pwd)/$TARGET_ASSET_FILENAME":"/tmp/$TARGET_ASSET_FILENAME" --entrypoint bash amazon/aws-cli - <<EOF
+    docker run -i --rm -v "$(pwd)/${TARGET_ASSET_FILENAME}":"/tmp/${TARGET_ASSET_FILENAME}" --entrypoint bash amazon/aws-cli - <<EOF
       export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
       export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 
       aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}"
       aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
 
-      aws --endpoint-url https://s3-de-central.profitbricks.com s3 cp /tmp/$TARGET_ASSET_FILENAME s3://web-hosting/ionos-group/$S3_FILENAME
+      aws --endpoint-url https://s3-de-central.profitbricks.com s3 cp /tmp/${TARGET_ASSET_FILENAME} s3://web-hosting/ionos-group/${S3_FILENAME}
 EOF
 
     if [[ $? -ne 0 ]]; then
