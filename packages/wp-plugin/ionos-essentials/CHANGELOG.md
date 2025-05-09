@@ -1,5 +1,11 @@
 # @ionos-wordpress/essentials
 
+## 0.0.5
+
+### Patch Changes
+
+- 124fc0d: letsgo
+
 ## 1.0.4
 
 ### Patch Changes
