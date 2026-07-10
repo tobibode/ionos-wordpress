@@ -1,5 +1,11 @@
 # @ionos-wordpress/essentials
 
+## 1.6.0
+
+### Minor Changes
+
+- 9a25b63: testing
+
 ## 1.5.1
 
 ### Patch Changes
