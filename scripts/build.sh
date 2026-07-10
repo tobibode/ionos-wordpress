@@ -165,16 +165,22 @@ function ionos.wordpress.build_workspace_package_docker() {
   #   fi
   # fi
 
+  # generate/update composer.lock file if composer.json exists in docker workspace package
+  if [[ -f "$path/composer.json" ]]; then
+    docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd)/$path":/app -w /app composer:latest install $COMPOSER_FLAGS --no-scripts
+  fi
+
   rm -rf $path/{dist,build,build-info}
 
   pnpm --filter "$PACKAGE_NAME" --if-present run prebuild
   pnpm --filter "$PACKAGE_NAME" --if-present run build
   pnpm --filter "$PACKAGE_NAME" --if-present run postbuild
 
+  [[ "$VERBOSE" == "yes" ]] && DOCKER_BUILD_VERBOSE='plain' || DOCKER_BUILD_VERBOSE='quiet'
   # image labels : see https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
   docker build \
     $(test -f $path/.env && cat $path/.env | sed 's/^/--build-arg /' ||:) \
-    --progress=plain \
+    --progress=$DOCKER_BUILD_VERBOSE \
     -t $DOCKER_IMAGE_NAME:latest \
     -t $DOCKER_IMAGE_NAME:$PACKAGE_VERSION \
     --label "maintainer=$DOCKER_IMAGE_AUTHOR" \
@@ -248,7 +254,6 @@ function ionos.wordpress.build_workspace_package_wp_plugin() {
   # (example : wp-plugin/essentials)
   local path="$(pwd)/packages/$1"
 
-  local IS_MU_PLUGIN=$([[ "$path" == *"/wp-mu-plugin/"* ]] && echo "true" || echo "false")
   local PLUGIN_NAME=$(basename $path)
 
   rm -rf $path/{dist,build-info,webpack.config.js}
@@ -267,7 +272,7 @@ function ionos.wordpress.build_workspace_package_wp_plugin() {
   done
 
   # transpile js/css scripts if src directory exists and --use flag is set
-  local JS_SRC_PATH=$path$($IS_MU_PLUGIN && echo "/$PLUGIN_NAME")/src
+  local JS_SRC_PATH=$path/$PLUGIN_NAME/src
   if [[ -d $JS_SRC_PATH ]] && [[ "${USE[@]}" =~ all|wp-plugin:wp-scripts ]]; then
     # generate webpack.config.js (see https://wordpress.stackexchange.com/a/425349)
     cat << EOF > $path/webpack.config.js
@@ -282,7 +287,7 @@ $(
   # add recursively all {index,*-index}.js files in src directory to webpack entry
   # ignore files with block.json in the same directory
   for js_file in $(find $JS_SRC_PATH -type f \( -name 'index.js' -o -name '*-index.js' \) ! -execdir test -f block.json \; -print | xargs -I {} realpath --relative-to $JS_SRC_PATH {}); do
-    echo "        '${js_file%.*}': '.$($IS_MU_PLUGIN && echo "/$PLUGIN_NAME")/src/$js_file',"
+    echo "        '${js_file%.*}': './$PLUGIN_NAME/src/$js_file',"
   done
 )
     },
@@ -295,7 +300,7 @@ EOF
 
     [[ "$VERBOSE" == 'yes' ]] && cat $path/webpack.config.js
 
-    local JS_BUILD_PATH=$path$($IS_MU_PLUGIN && echo "/$PLUGIN_NAME")/build
+    local JS_BUILD_PATH=$path/$PLUGIN_NAME/build
     # bundle js/css either in development or production mode depending on NODE_ENV
     pnpm \
       --filter "$PACKAGE_NAME" \
@@ -317,7 +322,7 @@ EOF
 
   # build localisation if WP_CLI_I18N_LOCALES is declared and enabled
   if [[ "${WP_CLI_I18N_LOCALES:-}" != '' ]] && [[ "${USE[@]}" =~ all|wp-plugin:i18n ]]; then
-    local LANGUAGES_DIR=.$($IS_MU_PLUGIN && echo "/$PLUGIN_NAME")/languages
+    local LANGUAGES_DIR="./$PLUGIN_NAME/languages"
 
     (
       # ionos.wordpress.build_workspace_package_wp_plugin.wp_cli assumes
@@ -339,7 +344,7 @@ EOF
           # generate/update pot file
           ionos.wordpress.build_workspace_package_wp_plugin.wp_cli i18n make-pot \
             --domain=$text_domain  \
-            --exclude=tests/,vendor/,package.json,node_modules/,src/ \
+            --exclude=tests/,vendor/,package.json,node_modules/,src/,stretch-extra/plugins,stretch-extra/themes  \
             ./ $LANGUAGES_DIR/$text_domain.pot
 
           # generate po files if WP_CLI_I18N_LOCALES is set
@@ -350,8 +355,20 @@ EOF
               msginit -i "$LANGUAGES_DIR/${text_domain}.pot" -l ${locale} -o "$LANGUAGES_DIR/${text_domain}-${locale}.po" --no-translator
             done
           fi
+
+          # copy po files to other locales
+          if [[ -n "${LANGUAGE_MAPPINGS[*]}" ]]; then
+            for mapping in ${LANGUAGE_MAPPINGS[@]}; do
+              src="${mapping%%=*}"
+              dest="${mapping#*=}"
+              cp "$LANGUAGES_DIR/$PLUGIN_NAME-${src}.po" "$LANGUAGES_DIR/$PLUGIN_NAME-${dest}.po"
+            done
+          fi
+
         done
       done
+
+      ionos.wordpress.log_info "generate localization files with wp-cli for plugin $PLUGIN_NAME"
 
       # update po files
       ionos.wordpress.build_workspace_package_wp_plugin.wp_cli i18n update-po $LANGUAGES_DIR/*.pot
@@ -370,16 +387,26 @@ EOF
         ionos.wordpress.log_warn "no po files found : consider creating one using '\$(cd $path/$LANGUAGES_DIR && msginit -i [pot_file] -l [locale] -o [pot_file_basename]-[locale].po --no-translator)'
         "
       fi
+
+      # remove po files for locales from LANGUAGE_MAPPINGS
+      if [[ -n "${LANGUAGE_MAPPINGS[*]}" ]]; then
+        for mapping in ${LANGUAGE_MAPPINGS[@]}; do
+          src="${mapping%%=*}"
+          dest="${mapping#*=}"
+          rm "$LANGUAGES_DIR/$PLUGIN_NAME-${dest}.po"
+        done
+      fi
     )
 
     # strip line numbers from comments in .pot and .po files
     for po_file in $(find "./packages/$1/" -name "*.po" -or -name "*.pot" -type f); do
       sed -i -e 's/^\(#:.*\):[0-9]\+/\1/g' $po_file
+      sed -i -e '/^#:/{$!N;/^\(#:.*\)\n\1$/!P;D}' $po_file
     done
 
     # make-pot regenerates the pot file even if no localization changes are
     # present in source files with a new creation date so that git always
-    # notices a changed pot pot file
+    # notices a changed pot file
     #
     # solution:
     #   revert generated pot file to git version if only one line
@@ -391,7 +418,7 @@ EOF
         <(sed -e '/^".*$/d' -e 's/^\(#:.*\):[0-9]\+/\1/g' $po_file) \
         <(git show HEAD:$po_file 2>/dev/null | sed -e '/^".*$/d' -e 's/^\(#:.*\):[0-9]\+/\1/g') \
         || diff_error_code=$?
-      [[ "0" == "$diff_error_code" ]] && git checkout $po_file
+      [[ "0" == "$diff_error_code" ]] && git checkout $po_file --quiet
     done
   else
     ionos.wordpress.log_warn "processing i18n skipped : env variable WP_CLI_I18N_LOCALES not set or not enabled by --use"
@@ -405,7 +432,9 @@ EOF
   if [[ "${USE[@]}" =~ all|wp-plugin:rector|wp-plugin:bundle ]]; then
     # copy plugin code to dist/[plugin-name]
     mkdir -p $path/dist/$plugin_name-$PACKAGE_VERSION
-    rsync -rupE --verbose \
+    ionos.wordpress.log_info "syncing plugin files to $path/dist/$plugin_name-$PACKAGE_VERSION"
+    [[ "$VERBOSE" == "yes" ]] && RSYNC_VERBOSE='--verbose' || RSYNC_VERBOSE='--quiet'
+    rsync -rupE $RSYNC_VERBOSE \
       --exclude=node_modules/ \
       --exclude=package.json \
       --exclude=dist/ \
@@ -414,7 +443,7 @@ EOF
       --exclude=languages/*.pot \
       --exclude=tests/ \
       --exclude=src/ \
-      --exclude=$($IS_MU_PLUGIN && echo "$PLUGIN_NAME/")src/ \
+      --exclude="$PLUGIN_NAME/src/" \
       --exclude=composer.* \
       --exclude=vendor/ \
       --exclude=.env \
@@ -432,14 +461,15 @@ EOF
       # we wrap the loop in a subshell call because of the nullglob shell behaviour change
       # nullglob is needed because we want to skip the loop if no rector-config-php*.php files are found
       shopt -s nullglob
-
+      ionos.wordpress.log_info "running rector for plugin $plugin_name"
+      [[ "$VERBOSE" == "yes" ]] && RECTOR_VERBOSE='' || RECTOR_VERBOSE='--no-diffs'
       # process plugin using rector
       for RECTOR_CONFIG in ./packages/docker/rector-php/rector-config-php*.php; do
         RECTOR_CONFIG=$(basename "$RECTOR_CONFIG" '.php')
         TARGET_PHP_VERSION="${RECTOR_CONFIG#*rector-config-php}"
         TARGET_DIR="dist/${plugin_name}-${PACKAGE_VERSION}-php${TARGET_PHP_VERSION}/${plugin_name}"
         mkdir -p $path/$TARGET_DIR
-        rsync -a $path/dist/${plugin_name}-$PACKAGE_VERSION/ $path/$TARGET_DIR
+        rsync -a --quiet $path/dist/${plugin_name}-$PACKAGE_VERSION/ $path/$TARGET_DIR
         # call dockerized rector
         docker run \
           $DOCKER_FLAGS \
@@ -447,11 +477,11 @@ EOF
           --user "$DOCKER_USER" \
           -v $path/$TARGET_DIR:/project/dist \
           -v $(pwd)/packages/docker/rector-php/${RECTOR_CONFIG}.php:/project/${RECTOR_CONFIG}.php \
-          -v $(pwd)/packages/docker/rector-php/wordpress-stubs.php:/project/wordpress-stubs.php \
           ionos-wordpress/rector-php \
           --clear-cache \
           --config "${RECTOR_CONFIG}.php" \
           --no-progress-bar \
+          ${RECTOR_VERBOSE} \
           process \
           dist
 
@@ -467,6 +497,8 @@ EOF
     )
   fi
 
+  pnpm --filter "$PACKAGE_NAME" --if-present run prepack
+
   if [[ "${USE[@]}" =~ all|wp-plugin:bundle ]]; then
     # create zip file for each dist/[plugin]-[version]-[php-version] directory
     for DIR in $(find $path/dist/ -type d -name '*-*-php*'); do
@@ -474,12 +506,13 @@ EOF
     done
     cat << EOF | tee $path/build-info
 $(cd $path/dist && ls -1shS *.zip 2>/dev/null || echo "no zip archives found")
-
-$(echo -n "---")
-
-$(for ZIP_ARCHIVE in $(find $path/dist/ -name '*.zip'); do (cd $(dirname $ZIP_ARCHIVE) && unzip -l $(basename $ZIP_ARCHIVE) && echo ""); done)
+$(if [[ "$VERBOSE" == "yes" ]]; then
+  for ZIP_ARCHIVE in $(find $path/dist/ -name '*.zip'); do (cd $(dirname $ZIP_ARCHIVE) && unzip -l $(basename $ZIP_ARCHIVE) && echo ""); done
+fi)
 EOF
   fi
+
+  pnpm --filter "$PACKAGE_NAME" --if-present run postpack
 }
 
 # build a monorepo workspace package
@@ -493,7 +526,7 @@ function ionos.wordpress.build_workspace_package() {
   local type="${path%/*}"
   # (example : essentials)
   local name="${path#*/}"
-  # (example : [curent-dir]/packages/wp-plugin/essentials)
+  # (example : [curent-dir]/packages/wp-plugin/ionos-essentials)
   local package_path="$(pwd)/packages/$path"
 
   ionos.wordpress.log_header "building workspace package ./packages/$path"

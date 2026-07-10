@@ -1,28 +1,19 @@
 node_modules
 /.pnpm-store
 /wp-env-home
-/packages/*/*/node_modules
-/packages/*/*/build
-# exclude wp-mu-plugin build dirs
 /packages/*/*/*/build
 /packages/*/*/dist
-# exclude wp-mu-plugin build dirs
-/packages/*/*/*/dist
-/packages/*/*/languages/*.json
-/packages/*/*/languages/*.mo
-/packages/*/*/languages/*.php
-# exclude wp-mu-plugin generated language files
 /packages/*/*/*/languages/*.json
 /packages/*/*/*/languages/*.mo
 /packages/*/*/*/languages/*.php
 /.vscode/settings.json
 /.vscode/launch.json
 /.secrets
+/.claude/settings.local.json
 .env.local
 /bin/act
 /.wp-env.json
 /.wp-env.override.json
-/artifacts/storage-states
 /bin/
 build-info
 build-info
@@ -39,3 +30,8 @@ packages/*/*/webpack.config.js
 /wp-playground-blueprint.local.json
 .DS_Store
 .go-waas.env
+mcp.log
+.gemini/skills
+packages/docker/*/vendor
+scripts/_stretch.sh
+.devcontainer/devcontainer-lock.json

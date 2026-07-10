@@ -7,11 +7,7 @@ Especially when working on GitHub pipelines, it is useful to fork the repository
 
 A working fork can be created by following these steps:
 
-- go to https://github.com/<your-github-name>/ionos-wordpress
-
-- press the "Fork" button
-
-- at the "Create a new fork page" uncheck the "Copy the develop branch only" option - we need also branches `main` and `gh-pages` to be copied
+- go to https://github.com/IONOS-WordPress/ionos-wordpress/fork and uncheck the "Copy the `develop` branch only"
 
 - and create a fork in your individual GitHub account
 
@@ -32,7 +28,6 @@ There are a few manual steps to be done to have a complete setup copy of the ori
 - (Optional) to do almost everything `local first` (for example doing releases), you need to [create a fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token)
 
   **Important** : You need to create a **New personal access token (classic)** (at https://github.com/settings/tokens) with the following scopes:
-
   - `repo`
   - `workflow`
   - `write:packages`

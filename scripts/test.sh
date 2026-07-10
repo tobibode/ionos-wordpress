@@ -70,7 +70,7 @@ if [[ "${USE[@]}" =~ e2e|react|all ]]; then
   fi
 
   # execute playwright browser installation if not already done
-  [[ $(find ~/.cache/ms-playwright -path "*/chrome-linux/chrome" 2>/dev/null | wc -l) -eq "0" ]] && pnpm exec playwright install chromium
+  pnpm exec playwright install chromium
 fi
 
 
@@ -88,7 +88,7 @@ if [[ "${USE[@]}" =~ all|php|e2e ]]; then
   # ensure wp-env is running
   # - if the install path does not exist
   # - or if the containers are not running
-  WPENV_INSTALLPATH="$(realpath --relative-to $(pwd) $(pnpm exec wp-env install-path))"
+  WPENV_INSTALLPATH="$(realpath --relative-to $(pwd) $(pnpm exec wp-env status --json | jq -r .installPath))"
   if [[ ! -d "$WPENV_INSTALLPATH/WordPress" ]] || [[ "$(docker ps -q --filter "name=$(basename $WPENV_INSTALLPATH)" | wc -l)" -lt '6' ]]; then
     pnpm start
   fi
@@ -105,9 +105,9 @@ if [[ "${USE[@]}" =~ all|php ]]; then
       TARGET_PHP_VERSION=$(echo "${transpiled_plugin_dir#*php}" | grep -oE '^[0-9.]+')
 
       ionos.wordpress.log_header "checking compatibility for target php version $TARGET_PHP_VERSION in plugin $transpiled_plugin_dir"
-      # check if the transpiled plugin code is valid for the desired php version
+      # check if the transpiled plugin code (except for phpunit test files ) is valid for the desired php version
       ! cat <<EOL | docker run -i --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp php:${TARGET_PHP_VERSION}-cli /bin/bash - | grep -v '^No syntax errors'
-find "$transpiled_plugin_dir" -name "*.php" -print0 | xargs -0L1 php -l
+find "$transpiled_plugin_dir" -name "*.php" -not -name "*Test.php" -not -path "*/stretch-extra/stretch-extra/*" -print0 | xargs -0L1 php -l
 exit $?
 EOL
 
@@ -122,16 +122,22 @@ EOL
   # start wp-env unit tests. provide part specific options and all positional arguments that are php files
   # (files will be converted to '--filter *TestCase' arguments to match PHPUNit expectations)
   pnpm -s run wp-env run tests-wordpress phpunit -- \
-    "${USE_OPTIONS[php]}" \
+    "--exclude /var/www/html/wp-content/mu-plugins/stretch-extra ${USE_OPTIONS[php]}" \
     $(for file in "${POSITIONAL_ARGS[@]}"; do [[ $file == *.php ]] && printf -- "--filter '%s'" $(basename $file .php); done)
 fi
 
 if [[ "${USE[@]}" =~ all|e2e ]]; then
+  # next 2 steps are required since potential runned phpunit tests rest the database to a state that is not suitable for e2e tests
+  # set the default admin password to the password defined in .env file
+  pnpm -s wp-env run tests-cli wp --quiet user update admin --user_pass="${WP_PASSWORD}"
+  # reset the user meta for compromised credentials check
+  pnpm -s wp-env run tests-cli wp --quiet user meta delete admin ionos_compromised_credentials_check_leak_detected_v2 &>/dev/null || true
+
   # start wp-env e2e tests. provide part specific options and all positional arguments that are php files
   (
     # pnpm exec wp-scripts test-playwright --pass-with-no-tests -c ./playwright.config.js \
     pnpm exec playwright test --pass-with-no-tests -c ./playwright.config.js \
-      "${USE_OPTIONS[e2e]:---quiet}" \
+      ${USE_OPTIONS[e2e]:---quiet} \
       $(for file in "${POSITIONAL_ARGS[@]}"; do [[ $file == *.js ]] && printf "$file "; done)
   )
 fi
@@ -208,6 +214,10 @@ Options:
     Execute only a single e2e test file :
       'pnpm run test:e2e packages/wp-plugin/ionos-essentials/inc/dashboard/tests/e2e/deep-links-block.spec.js' or
       'pnpm run test:e2e deep-links-block.spec.js' (path can be left off for playwright)
+
+    Execute e2e tests by tag (https://playwright.dev/docs/test-annotations#tag-tests) :
+      # run all tests except tagged with @editor
+      'pnpm run test:e2e --e2e-opts'
 
     Execute only a single e2e test file with playwright debugger :
       'pnpm run test:e2e --e2e-opts '--debug' packages/wp-plugin/ionos-essentials/inc/dashboard/tests/e2e/deep-links-block.spec.js' or

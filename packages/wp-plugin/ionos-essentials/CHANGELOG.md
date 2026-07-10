@@ -1,10 +1,164 @@
 # @ionos-wordpress/essentials
 
-## 0.0.5
+## 1.5.1
 
 ### Patch Changes
 
-- 124fc0d: letsgo
+- 984dfa8: Add more data to telemetry of loop
+
+## 1.5.0
+
+### Minor Changes
+
+- ee9f244: add adzone to dashboard
+  refactor mcp toggle feature for WP7.0
+  add wpcli functionality for mounted themes and plugins in stretch-extra
+
+### Patch Changes
+
+- 7c468df: handle missing NBA actions gracefully in get_nba method
+- cd50701: Allow REST API call in maintenance mode
+- 9c170fd: Stop calling wpscan middleware in case of errors
+- c4590ac: Add SSL certificate type to loop data
+
+## 1.4.8
+
+### Patch Changes
+
+- 7d67d9b: hotfix for ai switch-page
+
+## 1.4.7
+
+### Patch Changes
+
+- 88c31fc: fix multiple wp scan emails
+  add account-links to admin menu
+  block specific plugin for sfs
+- f24fac6: fix wpscan upstream error retry storm by caching empty result with 5-minute backoff TTL
+
+## 1.4.6
+
+### Patch Changes
+
+- a03297b: add apcu feature
+
+## 1.4.5
+
+### Patch Changes
+
+- 4a25ec5: change thumbnail behavior in maintenance mode
+
+## 1.4.4
+
+### Patch Changes
+
+- a4ef2ab: extended hosting data
+
+## 1.4.3
+
+### Patch Changes
+
+- b00d0e1: several bug fixes
+
+## 1.4.2
+
+### Patch Changes
+
+- 0bc29dd: Add htaccess-info to loop data
+
+## 1.4.1
+
+### Patch Changes
+
+- ab10e6f: fix permission check for click tracking
+
+## 1.4.0
+
+### Minor Changes
+
+- 4f464f1: Adding Loop
+
+## 1.3.3
+
+### Patch Changes
+
+- 6b0cfad: fix essentials for php 7.4.33
+
+## 1.3.2
+
+### Patch Changes
+
+- c5c484d: several bugfixes
+
+## 1.3.1
+
+### Patch Changes
+
+- 2530bee: translation improvements
+- 2530bee: site health fix
+
+## 1.3.0
+
+### Minor Changes
+
+- 551b0df: redesigned and improved next best actions
+- 551b0df: added status bar to Hub Overview
+
+## 1.2.0
+
+### Minor Changes
+
+- ce9b65a: Add survey popup
+
+## 1.1.0
+
+### Minor Changes
+
+- fdb95b1: Tools & Security Tab
+
+### Patch Changes
+
+- 6770bcf: migrate ionos-security plugin
+- f9df612: add maintenance mode
+- 4300b03: added quicklinks to header, footer template part and navigation view of site editor
+
+## 1.0.10
+
+### Patch Changes
+
+- f5fb5b9: add survey for IONOS customers
+- f5fb5b9: correctly brand login page
+
+## 1.0.9
+
+### Patch Changes
+
+- b3f72ce: migrate Assistant Plugin into Essentials
+
+## 1.0.8
+
+### Patch Changes
+
+- a2c9f3d: add new migration step
+
+## 1.0.7
+
+### Patch Changes
+
+- 0e4939c: updated localisation
+
+## 1.0.6
+
+### Patch Changes
+
+- e5e3d79: Add translations for switch page
+- 83023d7: jetpack migration
+
+## 1.0.5
+
+### Patch Changes
+
+- ac6b2cf: redesign login page
 
 ## 1.0.4
 
@@ -35,89 +189,3 @@
 ### Major Changes
 
 - 1fc02a5: new Feature: Overview
-
-## 0.2.6
-
-### Patch Changes
-
-- b536b48: test release
-
-## 0.2.5
-
-### Patch Changes
-
-- a1d5128: another prerelease candidate
-
-## 0.2.4
-
-### Patch Changes
-
-- e7e576b: beta release
-
-## 0.2.3
-
-### Patch Changes
-
-- f5bf008: test-release-7
-
-## 0.2.2
-
-### Patch Changes
-
-- 57f4ba8: test-release-6
-
-## 0.2.1
-
-### Patch Changes
-
-- 26a6207: new de_formal and es_ES
-
-## 0.2.0
-
-### Minor Changes
-
-- e5ab0a5: demo release
-
-## 0.1.3
-
-### Patch Changes
-
-- bbf1d2a: development release
-
-## 0.1.2
-
-### Patch Changes
-
-- 8155984: i18n fixes
-
-## 0.1.1
-
-### Patch Changes
-
-- 36cd0b0: development release
-
-## 0.1.0
-
-### Minor Changes
-
-- 25fa7fe: ## dashboard
-
-  @TODO : add overview over dashboard feature
-
-## 0.0.4
-
-### Patch Changes
-
-- 5b9e3c6: initial release 3
-
-## 0.0.3
-
-### Patch Changes
-
-- b60cb62: initial release 2
-
-## 0.0.2
-
-### Patch Changes
-
-- 88d78ef: initial version

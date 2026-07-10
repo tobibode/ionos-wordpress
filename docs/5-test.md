@@ -29,11 +29,9 @@ Example: packages/wp-plugin/test-plugin/src/feature-1/blocks/block-1/components/
   react/storybook tests utilize playwright to test the components in storybook.
 
   **For frontend testing we can use the same framework - playwright 🙌**
-
   - Run tests continuously when files change : `pnpm watch -- pnpm test:react`
 
   - vscode supports running tests by clicking on the play button in the test file.
-
     - same same for debugging tests.
 
     > [!TIP]
@@ -47,14 +45,13 @@ Example: packages/wp-plugin/test-plugin/src/feature-1/blocks/block-1/components/
 
 > phpunit test are identified by file name convention (`*Test.php`)
 
-Example: `packages/wp-plugin/essentials/inc/dashboard/tests/phpunit/AcceptanceTest.php`
+Example: `packages/wp-plugin/ionos-essentials/inc/dashboard/tests/phpunit/AcceptanceTest.php`
 
 - run phpunit tests : `pnpm test:php`
 
 - run when ever you changed a file : `pnpm watch -- pnpm test:php`
 
 - debug phpunit tests :
-
   - start `wp-env` launch configuration in vscode
 
   - start phpunit tests `pnpm test:php`
@@ -65,6 +62,8 @@ Example: `packages/wp-plugin/essentials/inc/dashboard/tests/phpunit/AcceptanceTe
 
 Example: `./packages/wp-plugin/test-plugin/tests/e2e/example.spec.js`
 
+> wp-dev containers will have a custom admin password set (in `.env` variable `WP_PASSWORD`) since the ionos-essentials security feature password checking requires a "safe" password to be set.
+
 - run e2e tests : `pnpm test:e2e`
 
 - (fastest) run a single e2e test : `pnpm run test:e2e ./packages/wp-plugin/test-plugin/tests/e2e/example.spec.js`
@@ -72,11 +71,9 @@ Example: `./packages/wp-plugin/test-plugin/tests/e2e/example.spec.js`
   or even simpler `pnpm run test:e2e example.spec.js` (paths can be skipped ion Playwright)
 
 - run whenever you changed a file : `pnpm watch -- pnpm test:e2e`
-
-  - run a single e2e test without rebuilding and checking wp-env is alive in playwright debug mode : `pnpm exec playwright test-playwright -c ./playwright.config.js --debug ./packages/wp-plugin/test-plugin/tests/e2e/example.spec.js`
+  - run a single e2e test without rebuilding and checking wp-env is alive in playwright debug mode : `pnpm run test:e2e --e2e-opts '--debug' ./packages/wp-plugin/test-plugin/tests/e2e/example.spec.js` (see `pnpm run test --help` for more)
 
 - vscode supports running e2e tests by clicking on the play button in the test file.
-
   - same same for debugging tests.
 
   > [!TIP]
@@ -86,6 +83,11 @@ Example: `./packages/wp-plugin/test-plugin/tests/e2e/example.spec.js`
   >
   > There is a GitHub feature request to make this step unnecessary: https://github.com/microsoft/playwright/issues/34572 - but until then, we have to do this step manually.
 
+## Loggin out in e2e-tests
+
+If you logout within a test, please re-login afterwards with `await requestUtils.setupRest();`.
+See the the _maintenance_-test for real life example.
+
 # Linux bare metal testing (without being in devcontainer)
 
 Everything works exactly as in DevContainer, but you need to have the requirements installed globall :
@@ -93,6 +95,22 @@ Everything works exactly as in DevContainer, but you need to have the requiremen
 - matching pnpm version (grep for `PNPM_VERSION` to get current version used in project) installed globally
 
 - playwright dependencies installed globally (see `.devcontainer/Dockerfile`) : `sudo pnpx playwright install-deps`
+
+# testing production
+
+to test the production build :
+
+- configure environment `TEST_PRODUCTION=true` before starting `wp-env`.
+
+  This can be done locally by adding the environment to your `.env.local` file.
+
+  > `wp-env` must be restarted to be properly configured. You can ensure this by executing `pnpm destroy` before.
+
+- run the test command (excluding editor tests which are not available in the production build) : `pnpm run test`
+
+Alternatively you can destroy wp-env and start the everything at once by doing `TEST_PRODUCTION=true pnpm run test`.
+
+> When starting wp-env with `TEST_PRODUCTION=true` a `.wp-env.json.override` will be created to mount the transpiled php files into `wp-env`. **This file will not automatically be removed on `pnpm destroy` by intention - you have to do it manually.**
 
 # links
 

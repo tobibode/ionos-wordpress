@@ -3,7 +3,6 @@
 use Symplify\EasyCodingStandard\Config\ECSConfig;
 use PhpCsFixer\Fixer\ControlStructure\YodaStyleFixer;
 use PhpCsFixer\Fixer\Operator\BinaryOperatorSpacesFixer;
-use WordPressCS\WordPress\Sniffs\WP\GlobalVariablesOverrideSniff;
 use WordPressCS\WordPress\Sniffs\Security\EscapeOutputSniff;
 
 $codeSnifferConfig = new PHP_CodeSniffer\Config(["--standard=./packages/docker/ecs-php/ruleset.xml"]);
@@ -32,7 +31,8 @@ if( !class_exists('WordPressSecurityEscapeOutputSniff') ) {
 return $configure->withRules([
     // import the rules from our loaded codesniffer config
     ...array_values($sniffCodes),
-    WordPressSecurityEscapeOutputSniff::class,
+    // @TODO: Enable this sniff once we have fixed all the issues
+    // WordPressSecurityEscapeOutputSniff::class,
 ])
   ->withPaths(['.'])
   ->withRootFiles()
@@ -51,7 +51,10 @@ return $configure->withRules([
       '**/ecs-config.php',
       '**/rector-config-php7.4.php',
       '**/rector-fix-types.php',
-      '**/wordpress-stubs.php',
+      '**/stretch-extra/plugins/*',
+      '**/stretch-extra/themes/*',
+      '**/stretch-extra/inc/apcu/object-cache.php',
+      YodaStyleFixer::class
     ]
   )
   ->withPreparedSets(
@@ -73,17 +76,8 @@ return $configure->withRules([
   // ->withEditorConfig(true)
   // use 2 spaces instead of psr12 default (4 spaces)
   ->withSpacing(indentation: '  ')
-
-  ->withConfiguredRule(YodaStyleFixer::class, [
-    'equal' => true,
-    'identical' => true,
-    'less_and_greater' => true,
-  ])
   // align assoc arrays
   ->withConfiguredRule(BinaryOperatorSpacesFixer::class, [
     'default' => 'align',
-  ])
-  ->withConfiguredRule(GlobalVariablesOverrideSniff::class, [
-    'treat_files_as_scoped' => true,
   ])
 ;

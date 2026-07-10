@@ -1,8 +1,7 @@
-# disable dashboard editor feature in production zip archives
+# exclude markdown files from plugin zip
 
-inc/dashboard/editor.php
-inc/dashboard/block-template.php
-inc/dashboard/global-styles.json
-inc/dashboard/README.md
-inc/migration/README.md
-inc/update/README.md
+README.md
+CHANGELOG.md
+-example-data.json
+# schema is need for the loop test runned within the ci/cd pipeline
+# *schema.json

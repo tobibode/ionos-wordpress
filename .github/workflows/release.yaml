@@ -9,12 +9,19 @@ on:
   # this workflow needs to be triggered manually
   workflow_dispatch:
 
+permissions:
+  # release.sh creates/deletes tags and creates/edits releases and their assets via 'gh' - all of
+  # that falls under the 'contents' permission scope for the GITHUB_TOKEN
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    # ensure only one pipeline is running this workflow at a time
+    # share one concurrency group with the 'pre-release' workflow so pre-release and release never
+    # run at the same time - the later trigger queues instead of racing/cancelling the other
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: ionos-wordpress-release-pipeline
+      cancel-in-progress: false
     steps:
       # only run on main branch
       - name: Check branch
@@ -24,7 +31,7 @@ jobs:
           exit 1
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: '${{ github.ref_name }}'
